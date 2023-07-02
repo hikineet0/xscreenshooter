@@ -6,7 +6,7 @@
 #include "xscreenshooter_debug.h"
 #include "xscreenshooter_capture_utils.h"
 
-gboolean capture(gpointer user_data)
+gboolean xscreenshooter_capture(gpointer user_data)
 {
 	CaptureData *capture_data = (CaptureData *) user_data;
 	GdkWindow *window;
