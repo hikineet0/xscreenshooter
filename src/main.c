@@ -23,14 +23,13 @@ void xscreenshooter_pre_capture(CaptureData *capture_data)
 		interval = capture_data->delay == 0 ? 200 : capture_data->delay * 1000;
 		g_timeout_add(interval, (GSourceFunc)cb_capture, user_data);
 	}
-
 }
 
 void xscreenshooter_post_capture(gpointer *user_data)
 {
 	CaptureData capture_data = (CaptureData *) user_data;
 	if (!capture_data->captured)
-		return
+		return;
 
 	GtkWidget *dialog;
 	dialog = xscreenshooter_create_post_capture_dialog(capture_data);
