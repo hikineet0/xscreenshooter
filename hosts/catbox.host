@@ -1,0 +1,4 @@
+url = https://catbox.moe/user/api.php
+fileToUpload = <file>
+
+reqtype = fileupload

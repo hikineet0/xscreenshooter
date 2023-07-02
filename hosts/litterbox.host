@@ -1,0 +1,6 @@
+url = https://litterbox.catbox.moe/resources/internals/api.php
+fileToUpload = <file>
+
+reqtype = fileupload
+time = <time_option>
+time_options = 1h,12h,24h,72h
