@@ -6,6 +6,11 @@
 #include "xscreenshooter_debug.h"
 #include "xscreenshooter_capture_utils.h"
 
+
+GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window, gint delay, gboolean is_capture_cursor);
+GdkPixbuf *xscreenshooter_get_pixbuf_from_window(GdkWindow *window, gint x, gint y, gint width, gint height);
+GdkWindow *xscreenshooter_get_active_window();
+
 gboolean xscreenshooter_capture(gpointer user_data)
 {
 	CaptureData *capture_data = (CaptureData *) user_data;
@@ -32,7 +37,7 @@ gboolean xscreenshooter_capture(gpointer user_data)
 	return G_SOURCE_REMOVE;
 }
 
-GdkPixbuf *xscreenshooter_capture_window(Gdkwindow *window, gint delay, gboolean is_capture_cursor)
+GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window, gint delay, gboolean is_capture_cursor)
 {
 	gint x, y, width, height;
 	gdk_window_get_geometry(window, &x, &y, &width, &height);
@@ -56,7 +61,7 @@ GdkPixbuf *xscreenshooter_capture_window(Gdkwindow *window, gint delay, gboolean
 
 	scale_factor = gdk_window_get_scale_factor(window);
 	surface = cairo_xlib_surface_create(
-			gdk_x11_display_get_xdisplay(gdk_window_get_displayj(window)),
+			gdk_x11_display_get_xdisplay(gdk_window_get_display(window)),
 			gdk_x11_window_get_xid(window),
 			gdk_x11_visual_get_xvisual(gdk_window_get_visual(window)),
 			gdk_window_get_width(window) * scale_factor,

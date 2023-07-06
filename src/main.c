@@ -13,8 +13,9 @@ void xscreenshooter_pre_capture(CaptureData *capture_data)
 
 	if (response != GTK_RESPONSE_ACCEPT)
 		return;
+}
 	
-	if (capture_data->capture_type == SELECT)
+	/*if (capture_data->capture_type == SELECT)
 		// because with SELECT the delay will be added when selecting?
 		// try adding it here first, then if that does not work in the select phase.
 		g_idle_add(cb_capture, user_data);
@@ -23,11 +24,12 @@ void xscreenshooter_pre_capture(CaptureData *capture_data)
 		interval = capture_data->delay == 0 ? 200 : capture_data->delay * 1000;
 		g_timeout_add(interval, (GSourceFunc)cb_capture, user_data);
 	}
+	
 }
 
 void xscreenshooter_post_capture(gpointer *user_data)
 {
-	CaptureData capture_data = (CaptureData *) user_data;
+	CaptureData *capture_data = (CaptureData *) user_data;
 	if (!capture_data->captured)
 		return;
 
@@ -40,11 +42,12 @@ void xscreenshooter_post_capture(gpointer *user_data)
 		return G_SOURCE_REMOVE;
 
 }
+*/
 
 void xscreenshooter_start_gui(CaptureData *capture_data)
 {
 	xscreenshooter_pre_capture(capture_data);
-	g_timeout_add(300, (GSourceFunc)xscreenshooter_post_capture, capture_data);
+	// g_timeout_add(300, (GSourceFunc)xscreenshooter_post_capture, capture_data);
 }
 
 int main(int argc, char **argv)
@@ -53,7 +56,7 @@ int main(int argc, char **argv)
 	CaptureData capture_data;
 	capture_data.captured = FALSE;
 	capture_data.delay = 0;
-	capture_data.capture_TYPE = ENTIRE;
+	capture_data.capture_type = ENTIRE;
 	capture_data.is_show_cursor = FALSE;
 	capture_data.app = NULL;
 	capture_data.url = NULL;
@@ -63,6 +66,6 @@ int main(int argc, char **argv)
 	capture_data.time_key = NULL;
 	capture_data.time_option = NULL;
 	xscreenshooter_start_gui(&capture_data);
-	gtk_main();
+	//gtk_main();
 	return 0;
 }
