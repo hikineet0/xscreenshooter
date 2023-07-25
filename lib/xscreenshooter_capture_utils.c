@@ -11,9 +11,8 @@ GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window, gint delay, gboolean
 GdkPixbuf *xscreenshooter_get_pixbuf_from_window(GdkWindow *window, gint x, gint y, gint width, gint height);
 GdkWindow *xscreenshooter_get_active_window();
 
-gboolean xscreenshooter_capture(gpointer user_data)
+gboolean xscreenshooter_capture(CaptureData *capture_data)
 {
-	CaptureData *capture_data = (CaptureData *) user_data;
 	GdkWindow *window;
 	GdkPixbuf *capture_pixbuf;
 	gint delay = capture_data->delay;
@@ -33,7 +32,6 @@ gboolean xscreenshooter_capture(gpointer user_data)
 	}
 	capture_pixbuf = xscreenshooter_capture_window(window, is_show_cursor, delay);
 	capture_data->capture_pixbuf = capture_pixbuf;
-	capture_data->captured = TRUE;
 	return G_SOURCE_REMOVE;
 }
 

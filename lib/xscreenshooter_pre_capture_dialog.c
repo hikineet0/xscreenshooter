@@ -6,66 +6,61 @@
 #include "xscreenshooter_capture_utils.h"
 //#include "xscreenshooter_common_callbacks.h"
 
-void cb_entire_screen_radio_button_toggled(GtkToggleButton *self, gpointer user_data)
+void cb_entire_screen_radio_button_toggled(GtkToggleButton *self, CaptureData *capture_data)
 {
-	CaptureData *capture_data = (CaptureData *) user_data;
 	if (gtk_toggle_button_get_active(self))
 		capture_data->capture_type = ENTIRE;
 }
 
-void cb_active_window_radio_button_toggled(GtkToggleButton *self, gpointer user_data)
+void cb_active_window_radio_button_toggled(GtkToggleButton *self, CaptureData *capture_data)
 {
-	CaptureData *capture_data = (CaptureData *) user_data;
 	if (gtk_toggle_button_get_active(self))
 		capture_data->capture_type = ACTIVE;
 }
 
-void cb_select_area_radio_button_toggled(GtkToggleButton *self, gpointer user_data)
+void cb_select_area_radio_button_toggled(GtkToggleButton *self, CaptureData *capture_data)
 {
-	CaptureData *capture_data = (CaptureData *) user_data;
 	if (gtk_toggle_button_get_active(self))
 		capture_data->capture_type = SELECT;
 }
 
-void cb_capture_cursor_check_button_toggled(GtkToggleButton *self, gpointer user_data)
+void cb_capture_cursor_check_button_toggled(GtkToggleButton *self, CaptureData *capture_data)
 {
-	CaptureData *capture_data = (CaptureData *) user_data;
 	if (gtk_toggle_button_get_active(self))
 		capture_data->is_show_cursor = TRUE;
 	else
 		capture_data->is_show_cursor = FALSE;
 }
 
-void cb_delay_spin_button_value_changed(GtkSpinButton *self, gpointer user_data)
+void cb_delay_spin_button_value_changed(GtkSpinButton *self, CaptureData *capture_data)
 {
-	CaptureData *capture_data = (CaptureData *) user_data;
 	capture_data->delay = (gint)gtk_spin_button_get_value(self);
 }
 
 GtkWidget *xscreenshooter_create_pre_capture_dialog(CaptureData *capture_data)
 {
-	GtkWidget *pre_capture_dialog, *header_bar, *grid, *label, *box, *options_box,
+	GtkWidget *dialog, *header_bar, *grid, *label, *box, *options_box,
 		  *radio_button, *check_button, *delay_box, *delay_spin_button_label, *delay_spin_button;
 
-	pre_capture_dialog = gtk_dialog_new_with_buttons(
+	dialog = gtk_dialog_new_with_buttons(
 			NULL,
 			NULL,
 			GTK_DIALOG_MODAL,
 			"_Cancel", GTK_RESPONSE_REJECT,
 			"_Next", GTK_RESPONSE_ACCEPT,
 			NULL);
-	gtk_container_set_border_width(GTK_CONTAINER(pre_capture_dialog), 5);
-	gtk_widget_set_size_request(pre_capture_dialog, 490, 290);
+	gtk_container_set_border_width(GTK_CONTAINER(dialog), 5);
+	gtk_widget_set_size_request(dialog, 490, 290);
 
 	// CREATING AND SETTING THE HEADER
 	header_bar = xscreenshooter_get_header_bar();
-	gtk_window_set_titlebar(GTK_WINDOW(pre_capture_dialog), header_bar);
+	gtk_window_set_titlebar(GTK_WINDOW(dialog), header_bar);
 
 
 	// CREATING MAIN GRID FOR THE TWO SIDES
 	grid = gtk_grid_new();
 	gtk_grid_set_column_spacing(GTK_GRID(grid), 100);
-	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(pre_capture_dialog))), grid, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), grid, FALSE, FALSE, 0);
 	gtk_widget_set_margin_top(grid, 10);
 
 	// BOX FOR LEFT SIDE WIDGETS
@@ -124,5 +119,5 @@ GtkWidget *xscreenshooter_create_pre_capture_dialog(CaptureData *capture_data)
 	delay_spin_button_label = gtk_label_new("seconds");
 	gtk_box_pack_start(GTK_BOX(delay_box), delay_spin_button_label, FALSE, FALSE, 0);
 
-	return pre_capture_dialog;
+	return dialog;
 }

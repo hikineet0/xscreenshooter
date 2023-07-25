@@ -22,7 +22,6 @@ typedef struct
 	gboolean is_show_cursor;
 
 	// post capture
-	gboolean captured;
 	GdkPixbuf *capture_pixbuf;
 	ActionType action_type;
 	gchar *app;

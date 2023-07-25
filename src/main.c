@@ -2,51 +2,80 @@
 #include "xscreenshooter_globals.h"
 #include "xscreenshooter_debug.h"
 #include "xscreenshooter_pre_capture_dialog.h"
+#include "xscreenshooter_post_capture_dialog.h"
+#include "xscreenshooter_capture_utils.h"
+
+void xscreenshooter_pre_capture(CaptureData *capture_data);
+void xscreenshooter_post_capture(CaptureData *capture_data);
+
+int cb_capture(CaptureData *capture_data)
+{
+	// xscreenshooter_capture(capture_data);
+	xscreenshooter_post_capture(capture_data);
+    return G_SOURCE_REMOVE;
+}
+
+void cb_pre_capture_dialog_response(GtkWidget *self, gint response, CaptureData *capture_data)
+{
+	gtk_widget_destroy(self);
+	if (response != GTK_RESPONSE_ACCEPT)
+		gtk_main_quit();
+
+	if (capture_data->capture_type == SELECT)
+		// because with SELECT the delay will be added after the selection is done
+		g_idle_add((GSourceFunc)cb_capture, capture_data);
+	else
+	{
+		gint interval;
+		// default 200ms delay because else it will capture the screenshooter dialog
+		interval = (gint)(capture_data->delay == 0 ? 200 : capture_data->delay * 1000);
+		g_timeout_add(interval, (GSourceFunc)cb_capture, capture_data);
+	}
+}
+
+void cb_post_capture_dialog_response(GtkWidget *self, gint response, CaptureData *capture_data)
+{
+	gtk_widget_destroy(self);
+	if (response != GTK_RESPONSE_ACCEPT)
+		gtk_main_quit();
+
+/*     switch (capture_data->action_type)
+    {
+        case SAVE:
+            xscreenshooter_save_to_file(capture_data);
+            break;
+        case CLIPBOARD:
+            xscreenshooter_copy_to_clipboard(capture_data);
+            break;
+        case OPEN:
+            xscreenshooter_open_with(capture_data);
+            break;
+        case UPLOAD:
+            xscreenshooter_upload_to(capture_data);
+            break;
+    } */
+}
 
 void xscreenshooter_pre_capture(CaptureData *capture_data)
 {
-	gint response;
 	GtkWidget *dialog;
 	dialog = xscreenshooter_create_pre_capture_dialog(capture_data);
+	g_signal_connect(dialog, "response", G_CALLBACK(cb_pre_capture_dialog_response), capture_data);
 	gtk_widget_show_all(dialog);
-	response = gtk_dialog_run(GTK_DIALOG(dialog));
-
-	if (response != GTK_RESPONSE_ACCEPT)
-		return;
-}
-	
-	/*if (capture_data->capture_type == SELECT)
-		// because with SELECT the delay will be added when selecting?
-		// try adding it here first, then if that does not work in the select phase.
-		g_idle_add(cb_capture, user_data);
-	else
-	{
-		interval = capture_data->delay == 0 ? 200 : capture_data->delay * 1000;
-		g_timeout_add(interval, (GSourceFunc)cb_capture, user_data);
-	}
-	
 }
 
-void xscreenshooter_post_capture(gpointer *user_data)
+void xscreenshooter_post_capture(CaptureData *capture_data)
 {
-	CaptureData *capture_data = (CaptureData *) user_data;
-	if (!capture_data->captured)
-		return;
-
 	GtkWidget *dialog;
 	dialog = xscreenshooter_create_post_capture_dialog(capture_data);
+    g_signal_connect(dialog, "response", G_CALLBACK(cb_post_capture_dialog_response), capture_data);
 	gtk_widget_show_all(dialog);
-	response = gtk_dialog_run(GTK_DIALOG(dialog));
-
-	if (response != GTK_RESPONSE_ACCEPT)
-		return G_SOURCE_REMOVE;
-
 }
-*/
 
 void xscreenshooter_start_gui(CaptureData *capture_data)
 {
 	xscreenshooter_pre_capture(capture_data);
+	gtk_main();
 	// g_timeout_add(300, (GSourceFunc)xscreenshooter_post_capture, capture_data);
 }
 
@@ -54,7 +83,6 @@ int main(int argc, char **argv)
 {
 	gtk_init(&argc, &argv);
 	CaptureData capture_data;
-	capture_data.captured = FALSE;
 	capture_data.delay = 0;
 	capture_data.capture_type = ENTIRE;
 	capture_data.is_show_cursor = FALSE;
@@ -66,6 +94,5 @@ int main(int argc, char **argv)
 	capture_data.time_key = NULL;
 	capture_data.time_option = NULL;
 	xscreenshooter_start_gui(&capture_data);
-	//gtk_main();
 	return 0;
 }
