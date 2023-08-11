@@ -2,7 +2,7 @@
 #define XSCREENSHOOTER_GLOBALS
 
 #define THUMB_X_SIZE 200
-#define THUMB_Y_SIZE 200
+#define THUMB_Y_SIZE 140
 
 typedef enum
 {

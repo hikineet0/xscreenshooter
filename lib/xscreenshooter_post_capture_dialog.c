@@ -103,13 +103,13 @@ void cb_action_upload_to_options_combo_box_changed_1(GtkComboBox *self, GtkWidge
     gtk_tree_model_get(model, &iter, 2, &post_data, -1);
     if (g_strcmp0(post_data->params->time_key, NULL))
     {
+        gtk_list_store_clear(GTK_LIST_STORE(gtk_combo_box_get_model(GTK_COMBO_BOX(combo_box))));
         gtk_widget_set_sensitive(combo_box, TRUE);
         populate_list_store_time_limit(GTK_LIST_STORE(gtk_combo_box_get_model(GTK_COMBO_BOX(combo_box))), post_data->params->time_options);
+        set_time_limit_combo_box_default(combo_box);
     }
     else
         gtk_widget_set_sensitive(combo_box, FALSE);
-
-    set_time_limit_combo_box_default(combo_box);
 }
 
 void cb_action_upload_to_options_combo_box_changed_2(GtkComboBox *self, CaptureData *capture_data)
@@ -372,7 +372,7 @@ GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
     gtk_grid_attach(GTK_GRID(actions_grid), combo_box, 1, 2, 1, 1);
 
     radio_button = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio_button), "Open with: ");
-    g_signal_connect(radio_button, "toggled", G_CALLBACK(cb_action_open_with_radio_button_toggled), capture_data);
+    g_signal_connect(radio_button, "toggled", G_CALLBACK(cb_action_open_with_radio_button_toggled), combo_box);
     gtk_grid_attach(GTK_GRID(actions_grid), radio_button, 0, 2, 1, 1);
 
     // UPLOAD TO
@@ -419,10 +419,10 @@ GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
     gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
     gtk_box_pack_start(GTK_BOX(box), label, FALSE, FALSE, 0);
 
-    // thumbnail = xscreenshoooter_get_thumbnail(capture_data->capture_pixbuf);
-    // preview_image = gtk_image_new_from_pixbuf(thumbnail);
-    // g_object_unref(thumbnail);
-    // gtk_box_pack_start(GTK_BOX(box), preview_image, TRUE, TRUE, 0);
+    thumbnail = xscreenshooter_get_thumbnail(capture_data->capture_pixbuf);
+    preview_image = gtk_image_new_from_pixbuf(thumbnail);
+    g_object_unref(thumbnail);
+    gtk_box_pack_start(GTK_BOX(box), preview_image, TRUE, TRUE, 0);
 
     gtk_grid_attach(GTK_GRID(grid), box, 1, 0, 1, 1);
 

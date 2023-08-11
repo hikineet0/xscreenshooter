@@ -10,7 +10,7 @@ void xscreenshooter_post_capture(CaptureData *capture_data);
 
 int cb_capture(CaptureData *capture_data)
 {
-	// xscreenshooter_capture(capture_data);
+	xscreenshooter_capture(capture_data);
 	xscreenshooter_post_capture(capture_data);
     return G_SOURCE_REMOVE;
 }
@@ -46,7 +46,7 @@ void cb_post_capture_dialog_response(GtkWidget *self, gint response, CaptureData
             break;
         case CLIPBOARD:
             xscreenshooter_copy_to_clipboard(capture_data);
-            break;
+            BREAK;
         case OPEN:
             xscreenshooter_open_with(capture_data);
             break;
