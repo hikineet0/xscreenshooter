@@ -25,7 +25,7 @@ static GdkPixbuf *xscreenshooter_get_pixbuf_from_window(GdkWindow *window, gint 
 
 static GdkWindow *xscreenshooter_get_active_window();
 static Window xscreenshooter_get_active_window_from_xlib();
-static GdkWindow* xscreenshooter_get_area_selection();
+static GdkPixbuf* xscreenshooter_get_area_selection();
 static GdkFilterReturn mask(GdkXEvent *xevent, GdkEvent *event, RbData *rbdata);
 
 
@@ -36,6 +36,8 @@ void xscreenshooter_capture(CaptureData *capture_data)
 	gint delay = capture_data->delay;
 	gboolean is_show_cursor = capture_data->is_show_cursor;
 
+    window = NULL;
+
 	switch (capture_data->capture_type)
 	{
 		case ENTIRE:
@@ -45,10 +47,13 @@ void xscreenshooter_capture(CaptureData *capture_data)
 			window = xscreenshooter_get_active_window();
 			break;
         case SELECT:
-			window = xscreenshooter_get_area_selection();
+			capture_pixbuf = xscreenshooter_get_area_selection();
             break;
 	}
-	capture_pixbuf = xscreenshooter_capture_window(window, is_show_cursor, delay);
+    if (window != NULL)
+        // Only useful to filter out SELECT screenshots
+        capture_pixbuf = xscreenshooter_capture_window(window, is_show_cursor, delay);
+
 	capture_data->capture_pixbuf = capture_pixbuf;
 }
 
@@ -306,7 +311,7 @@ static GdkFilterReturn mask(GdkXEvent *xevent, GdkEvent *event, RbData *rbdata)
     }
 }
 
-static GdkWindow* xscreenshooter_get_area_selection(CaptureData *capture_data)
+static GdkPixbuf* xscreenshooter_get_area_selection(CaptureData *capture_data)
 {
     GdkWindow *window;
 
@@ -319,6 +324,8 @@ static GdkWindow* xscreenshooter_get_area_selection(CaptureData *capture_data)
     GdkSeat *seat;
     GdkCursor *cursor;
     RbData rbdata;
+
+    GdkPixbuf *capture_pixbuf;
 
     display = gdk_x11_get_default_xdisplay();
     screen = gdk_x11_get_default_screen();
@@ -374,11 +381,34 @@ static GdkWindow* xscreenshooter_get_area_selection(CaptureData *capture_data)
 
     if (!rbdata.is_cancelled)
     {
-        // get window
-        // from rectangle
+        int root_width, root_height;
+
+        root_width = gdk_window_get_width(window);
+        root_height = gdk_window_get_height(window);
+
+        if (rbdata.rectangle.x < 0)
+            rbdata.rectangle.width += rbdata.rectangle.x;
+        if (rbdata.rectangle.y < 0)
+            rbdata.rectangle.height += rbdata.rectangle.y;
+
+        rbdata.rectangle.x = MAX(0, rbdata.rectangle.x);
+        rbdata.rectangle.y = MAX(0, rbdata.rectangle.y);
+
+        if (rbdata.rectangle.x + rbdata.rectangle.width > root_width)
+            rbdata.rectangle.width = root_width - rbdata.rectangle.x;
+        if (rbdata.rectangle.y + rbdata.rectangle.height > root_height)
+            rbdata.rectangle.height = root_height - rbdata.rectangle.y;
+
+        if (capture_data->delay == 0)
+            g_usleep(200000);
+        else
+            sleep(capture_data->delay);
+
+        capture_pixbuf = xscreenshooter_get_pixbuf_from_window(window, rbdata.rectangle.x, rbdata.rectangle.y,
+                rbdata.rectangle.width, rbdata.rectangle.height);
     }
     else
         gtk_main_quit();
 
-    return window;
+    return capture_pixbuf;
 }
