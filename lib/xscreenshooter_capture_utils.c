@@ -5,6 +5,8 @@
 #include <cairo-xlib.h>
 #include <X11/extensions/XI2.h>
 #include <X11/extensions/XInput2.h>
+#include <X11/extensions/Xfixes.h>
+
 #include "xscreenshooter_globals.h"
 #include "xscreenshooter_debug.h"
 #include "xscreenshooter_capture_utils.h"
@@ -20,13 +22,17 @@ typedef struct {
 } RbData;
 
 
-static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window, gint delay, gboolean is_capture_cursor);
+static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window);
 static GdkPixbuf *xscreenshooter_get_pixbuf_from_window(GdkWindow *window, gint x, gint y, gint width, gint height);
 
 static GdkWindow *xscreenshooter_get_active_window();
 static Window xscreenshooter_get_active_window_from_xlib();
+
 static GdkPixbuf* xscreenshooter_get_area_selection();
 static GdkFilterReturn mask(GdkXEvent *xevent, GdkEvent *event, RbData *rbdata);
+
+static void capture_cursor(GdkPixbuf *capture_pixbuf, int x, int y, int w, int h);
+static void composite_cursor(GdkPixbuf *dest, GdkPixbuf *src, GdkRectangle *dest_rect, GdkRectangle *src_rect, int hotx, int hoty);
 
 
 void xscreenshooter_capture(CaptureData *capture_data)
@@ -34,9 +40,6 @@ void xscreenshooter_capture(CaptureData *capture_data)
 	GdkWindow *window;
 	GdkPixbuf *capture_pixbuf;
 	gint delay = capture_data->delay;
-	gboolean is_show_cursor = capture_data->is_show_cursor;
-
-    window = NULL;
 
 	switch (capture_data->capture_type)
 	{
@@ -48,16 +51,34 @@ void xscreenshooter_capture(CaptureData *capture_data)
 			break;
         case SELECT:
 			capture_pixbuf = xscreenshooter_get_area_selection();
+            window = NULL;
             break;
 	}
     if (window != NULL)
+    {
         // Only useful to filter out SELECT screenshots
-        capture_pixbuf = xscreenshooter_capture_window(window, is_show_cursor, delay);
+        capture_pixbuf = xscreenshooter_capture_window(window);
+        if (capture_data->is_show_cursor)
+        {
+            int x, y, w, h;
+            gdk_window_get_origin(window, &x, &y);
+            w = gdk_window_get_width(window);
+            h = gdk_window_get_height(window);
+            capture_cursor(capture_pixbuf, x, y, w, h);
+        }
+    }
+
+    if (capture_pixbuf == NULL)
+    {
+        log_s("Error xscreenshooter_capture");
+        gtk_main_quit();
+        return;
+    }
 
 	capture_data->capture_pixbuf = capture_pixbuf;
 }
 
-static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window, gint delay, gboolean is_capture_cursor)
+static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window)
 {
 	gint x, y, width, height;
 	gdk_window_get_geometry(window, &x, &y, &width, &height);
@@ -406,9 +427,112 @@ static GdkPixbuf* xscreenshooter_get_area_selection(CaptureData *capture_data)
 
         capture_pixbuf = xscreenshooter_get_pixbuf_from_window(window, rbdata.rectangle.x, rbdata.rectangle.y,
                 rbdata.rectangle.width, rbdata.rectangle.height);
+        capture_cursor(capture_pixbuf, rbdata.rectangle.x, rbdata.rectangle.y, rbdata.rectangle.width, rbdata.rectangle.height);
     }
     else
         gtk_main_quit();
 
     return capture_pixbuf;
+}
+
+
+static void free_pixmap_data(guchar *pixels, gpointer data)
+{
+    g_free(pixels);
+}
+
+static void composite_cursor(GdkPixbuf *dest, GdkPixbuf *src, GdkRectangle *dest_rect, GdkRectangle *src_rect, int hotx, int hoty)
+{
+    if (gdk_rectangle_intersect(dest_rect, src_rect, src_rect))
+    {
+        int destx, desty;
+
+        destx = src_rect->x - dest_rect->x - hotx;
+        desty = src_rect->y - dest_rect->y - hoty;
+
+        gdk_pixbuf_composite(src, dest, 
+                CLAMP(destx, 0, destx),
+                CLAMP(desty, 0, desty),
+                src_rect->width,
+                src_rect->height,
+                destx,
+                desty,
+                1.0, 1.0,
+                GDK_INTERP_BILINEAR,
+                255);
+    }
+    return;
+}
+
+static void capture_cursor(GdkPixbuf *capture_pixbuf, int x, int y, int w, int h)
+{
+    XFixesCursorImage *cursor_image = NULL;
+    int cursorx, cursory, xhot, yhot;
+    guint32 tmp;
+    guchar *cursor_pixmap_data = NULL;
+    gint i, j;
+    int event_basep, error_basep;
+    GdkPixbuf *cursor_pixbuf;
+
+    GdkRectangle window_rect, cursor_rect;
+
+    if (!XFixesQueryExtension(GDK_DISPLAY_XDISPLAY(gdk_display_get_default()),
+                &event_basep, &error_basep))
+        return;
+
+    cursor_image = XFixesGetCursorImage(GDK_DISPLAY_XDISPLAY(gdk_display_get_default()));
+    if (cursor_image == NULL)
+        return;
+
+    cursorx = cursor_image->x;
+    cursory = cursor_image->y;
+    xhot = cursor_image->xhot;
+    yhot = cursor_image->yhot;
+
+    // cursor_image->pixels contains premultiplied 32-bit ARGB data stored
+    // in long (!)
+    cursor_pixmap_data = g_new(guchar, cursor_image->width * cursor_image->height * 4);
+
+    for (i = 0, j = 0;
+            i < cursor_image->width * cursor_image->height;
+            i++, j += 4)
+    {
+        tmp = ((guint32)cursor_image->pixels[i] << 8) | \
+                ((guint32)cursor_image->pixels[i] >> 24);
+                cursor_pixmap_data[j] = tmp >> 24;
+                cursor_pixmap_data[j + 1] = (tmp >> 16) & 0xff;
+                cursor_pixmap_data[j + 2] = (tmp >> 8) & 0xff;
+                cursor_pixmap_data[j + 3] = tmp & 0xff;
+    }
+
+    cursor_pixbuf = gdk_pixbuf_new_from_data(cursor_pixmap_data,
+            GDK_COLORSPACE_RGB,
+            TRUE,
+            8,
+            cursor_image->width,
+            cursor_image->height,
+            cursor_image->width * 4,
+            free_pixmap_data,
+            NULL);
+
+    XFree(cursor_image);
+
+    window_rect.x = x;
+    window_rect.y = y;
+    window_rect.width = w;
+    window_rect.height = h;
+    
+    cursor_rect.x = cursorx;
+    cursor_rect.y = cursory;
+    cursor_rect.width = gdk_pixbuf_get_width(cursor_pixbuf);
+    cursor_rect.height = gdk_pixbuf_get_height(cursor_pixbuf);
+
+    log_d(window_rect.x);
+    log_d(window_rect.y);
+    log_d(cursor_rect.x);
+    log_d(cursor_rect.y);
+
+    composite_cursor(capture_pixbuf, cursor_pixbuf, &window_rect, &cursor_rect, xhot, yhot);
+
+    return;
 }
