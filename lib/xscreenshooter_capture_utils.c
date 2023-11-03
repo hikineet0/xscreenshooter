@@ -80,11 +80,10 @@ void xscreenshooter_capture(CaptureData *capture_data)
 
 static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window)
 {
-	gint x, y, width, height;
-	gdk_window_get_geometry(window, &x, &y, &width, &height);
-    log_d(x);
-    log_d(y);
-	GdkPixbuf *capture_pixbuf = xscreenshooter_get_pixbuf_from_window(window, x, y, width, height);
+	gint width, height;
+	gdk_window_get_geometry(window, NULL, NULL, &width, &height);
+    // 0, 0 for x and y because dont need to offset the screenshot
+	GdkPixbuf *capture_pixbuf = xscreenshooter_get_pixbuf_from_window(window, 0, 0, width, height);
 	return capture_pixbuf;
 }
 
@@ -113,8 +112,8 @@ static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window)
 
 	pixbuf = gdk_pixbuf_get_from_surface(
 			surface,
-			0,
-			0,
+			x,
+			y,
 			width * scale_factor,
 			height * scale_factor
 			);
