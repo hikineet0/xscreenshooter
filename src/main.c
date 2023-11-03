@@ -4,6 +4,7 @@
 #include "xscreenshooter_pre_capture_dialog.h"
 #include "xscreenshooter_post_capture_dialog.h"
 #include "xscreenshooter_capture_utils.h"
+#include "xscreenshooter_post_capture_utils.h"
 
 void xscreenshooter_pre_capture(CaptureData *capture_data);
 void xscreenshooter_post_capture(CaptureData *capture_data);
@@ -36,15 +37,16 @@ void cb_pre_capture_dialog_response(GtkWidget *self, gint response, CaptureData 
 void cb_post_capture_dialog_response(GtkWidget *self, gint response, CaptureData *capture_data)
 {
 	gtk_widget_destroy(self);
+
 	if (response != GTK_RESPONSE_ACCEPT)
 		gtk_main_quit();
 
-/*     switch (capture_data->action_type)
+     switch (capture_data->action_type)
     {
         case SAVE:
             xscreenshooter_save_to_file(capture_data);
             break;
-        case CLIPBOARD:
+/*        case CLIPBOARD:
             xscreenshooter_copy_to_clipboard(capture_data);
             BREAK;
         case OPEN:
@@ -53,7 +55,9 @@ void cb_post_capture_dialog_response(GtkWidget *self, gint response, CaptureData
         case UPLOAD:
             xscreenshooter_upload_to(capture_data);
             break;
-    } */
+            */
+    }
+     gtk_main_quit();
 }
 
 void xscreenshooter_pre_capture(CaptureData *capture_data)

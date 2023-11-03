@@ -82,6 +82,8 @@ static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window)
 {
 	gint x, y, width, height;
 	gdk_window_get_geometry(window, &x, &y, &width, &height);
+    log_d(x);
+    log_d(y);
 	GdkPixbuf *capture_pixbuf = xscreenshooter_get_pixbuf_from_window(window, x, y, width, height);
 	return capture_pixbuf;
 }
@@ -111,8 +113,8 @@ static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window)
 
 	pixbuf = gdk_pixbuf_get_from_surface(
 			surface,
-			x,
-			y,
+			0,
+			0,
 			width * scale_factor,
 			height * scale_factor
 			);
@@ -158,17 +160,17 @@ static GdkWindow *xscreenshooter_get_active_window()
 
         window = gdk_get_default_root_window();
     }
-//     else
-//     {
-//         // Else we find the toplevel window to grab the decorations.
-//         // TRACE ("Active window is normal window, grab the toplevel window");
-// 
-//         window2 = gdk_window_get_toplevel(window);
-// 
-//         g_object_unref(window);
-// 
-//         window = window2;
-//     }
+    else
+    {
+        // Else we find the toplevel window to grab the decorations.
+        // TRACE ("Active window is normal window, grab the toplevel window");
+
+        window2 = gdk_window_get_toplevel(window);
+
+        g_object_unref(window);
+
+        window = window2;
+    }
     return window;
 }
 
@@ -526,11 +528,6 @@ static void capture_cursor(GdkPixbuf *capture_pixbuf, int x, int y, int w, int h
     cursor_rect.y = cursory;
     cursor_rect.width = gdk_pixbuf_get_width(cursor_pixbuf);
     cursor_rect.height = gdk_pixbuf_get_height(cursor_pixbuf);
-
-    log_d(window_rect.x);
-    log_d(window_rect.y);
-    log_d(cursor_rect.x);
-    log_d(cursor_rect.y);
 
     composite_cursor(capture_pixbuf, cursor_pixbuf, &window_rect, &cursor_rect, xhot, yhot);
 
