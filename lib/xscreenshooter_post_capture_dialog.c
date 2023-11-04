@@ -52,19 +52,19 @@ typedef struct{
 
 void cb_action_save_radio_button_toggled(GtkToggleButton *self, CaptureData *capture_data)
 {
-    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(self)))
+    if (gtk_toggle_button_get_active(self))
             capture_data->action_type = SAVE;
 }
 
 void cb_action_copy_to_clipboard_radio_button_toggled(GtkToggleButton *self, CaptureData *capture_data)
 {
-    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(self)))
+    if (gtk_toggle_button_get_active(self))
         capture_data->action_type = CLIPBOARD;
 }
 
 void cb_action_open_with_radio_button_toggled(GtkToggleButton *self, GtkWidget *combo_box)
 {
-    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(self)))
+    if (gtk_toggle_button_get_active(self))
         gtk_widget_set_sensitive(combo_box, TRUE);
     else
         gtk_widget_set_sensitive(combo_box, FALSE);
@@ -72,12 +72,12 @@ void cb_action_open_with_radio_button_toggled(GtkToggleButton *self, GtkWidget *
 
 void cb_action_open_with_options_combo_box_changed(GtkComboBox *self, CaptureData *capture_data)
 {
-    GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(self));
+    GtkTreeModel *model = gtk_combo_box_get_model(self);
     GtkTreeIter iter;
     gchar *app = NULL;
     GAppInfo *app_info = NULL;
 
-    gtk_combo_box_get_active_iter(GTK_COMBO_BOX(self), &iter);
+    gtk_combo_box_get_active_iter(self, &iter);
     gtk_tree_model_get(model, &iter, 2, &app, -1);
     gtk_tree_model_get(model, &iter, 3, &app_info, -1);
 

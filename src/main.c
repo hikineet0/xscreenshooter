@@ -89,6 +89,7 @@ int main(int argc, char **argv)
 	CaptureData capture_data;
 	capture_data.delay = 0;
 	capture_data.capture_type = ENTIRE;
+	capture_data.action_type = SAVE;
 	capture_data.is_show_cursor = FALSE;
 	capture_data.app = NULL;
 	capture_data.url = NULL;
