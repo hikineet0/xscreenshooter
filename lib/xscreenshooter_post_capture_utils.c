@@ -52,4 +52,13 @@ void xscreenshooter_save_to_file(CaptureData *capture_data)
         filename = gtk_file_chooser_get_filename(chooser);
         gdk_pixbuf_save(pixbuf, filename, "png", NULL, "compression", "9", NULL);
     }
+    g_free(filename);
+    free(timestamp_s);
+}
+
+void xscreenshooter_copy_to_clipboard(GdkPixbuf *pixbuf)
+{
+    GtkClipboard *clipboard;
+    clipboard = gtk_clipboard_get_for_display(gdk_display_get_default(), GDK_SELECTION_CLIPBOARD);
+    gtk_clipboard_set_image(clipboard, pixbuf);
 }

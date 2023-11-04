@@ -46,10 +46,10 @@ void cb_post_capture_dialog_response(GtkWidget *self, gint response, CaptureData
         case SAVE:
             xscreenshooter_save_to_file(capture_data);
             break;
-/*        case CLIPBOARD:
-            xscreenshooter_copy_to_clipboard(capture_data);
-            BREAK;
-        case OPEN:
+        case CLIPBOARD:
+            xscreenshooter_copy_to_clipboard(capture_data->capture_pixbuf);
+            break;
+/*        case OPEN:
             xscreenshooter_open_with(capture_data);
             break;
         case UPLOAD:
