@@ -62,7 +62,7 @@ void cb_action_copy_to_clipboard_radio_button_toggled(GtkToggleButton *self, Cap
         capture_data->action_type = CLIPBOARD;
 }
 
-void cb_action_open_with_radio_button_toggled(GtkToggleButton *self, GtkWidget *combo_box)
+void cb_action_open_with_radio_button_toggled_2(GtkToggleButton *self, GtkWidget *combo_box)
 {
     if (gtk_toggle_button_get_active(self))
         gtk_widget_set_sensitive(combo_box, TRUE);
@@ -70,8 +70,15 @@ void cb_action_open_with_radio_button_toggled(GtkToggleButton *self, GtkWidget *
         gtk_widget_set_sensitive(combo_box, FALSE);
 }
 
+void cb_action_open_with_radio_button_toggled_1(GtkToggleButton *self, CaptureData *capture_data)
+{
+    if (gtk_toggle_button_get_active(self))
+        capture_data->action_type = OPEN;
+}
+
 void cb_action_open_with_options_combo_box_changed(GtkComboBox *self, CaptureData *capture_data)
 {
+    capture_data->action_type = OPEN;
     GtkTreeModel *model = gtk_combo_box_get_model(self);
     GtkTreeIter iter;
     gchar *app = NULL;
@@ -86,10 +93,16 @@ void cb_action_open_with_options_combo_box_changed(GtkComboBox *self, CaptureDat
     capture_data->app_info = app_info;
 }
 
-void cb_action_upload_to_radio_button_toggled(GtkToggleButton *self, GtkWidget *combo_box)
+void cb_action_upload_to_radio_button_toggled_2(GtkToggleButton *self, GtkWidget *combo_box)
 {
     /* Enables/disables hosts combo box. */
     gtk_widget_set_sensitive(combo_box, gtk_toggle_button_get_active(self));
+}
+
+void cb_action_upload_to_radio_button_toggled_1(GtkToggleButton *self, CaptureData *capture_data)
+{
+    if (gtk_toggle_button_get_active(self))
+        capture_data->action_type = UPLOAD;
 }
 
 void cb_action_upload_to_options_combo_box_changed_1(GtkComboBox *self, GtkWidget *combo_box)
@@ -372,12 +385,12 @@ GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
     gtk_grid_attach(GTK_GRID(actions_grid), combo_box, 1, 2, 1, 1);
 
     radio_button = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio_button), "Open with: ");
-    g_signal_connect(radio_button, "toggled", G_CALLBACK(cb_action_open_with_radio_button_toggled), combo_box);
+    g_signal_connect(radio_button, "toggled", G_CALLBACK(cb_action_open_with_radio_button_toggled_2), combo_box);
+    g_signal_connect(radio_button, "toggled", G_CALLBACK(cb_action_open_with_radio_button_toggled_1), capture_data);
     gtk_grid_attach(GTK_GRID(actions_grid), radio_button, 0, 2, 1, 1);
 
     // UPLOAD TO
     radio_button = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio_button), "Upload to: ");
-    g_signal_connect(radio_button, "toggled", G_CALLBACK(cb_action_save_radio_button_toggled), capture_data);
     gtk_grid_attach(GTK_GRID(actions_grid), radio_button, 0, 3, 1, 1);
 
     //                                 icon,            name,          POSTData
@@ -403,7 +416,8 @@ GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
     gtk_widget_set_sensitive(time_limit_combo_box, FALSE);
     gtk_grid_attach(GTK_GRID(actions_grid), time_limit_combo_box, 2, 3, 1, 1);
     
-    g_signal_connect(radio_button, "toggled", G_CALLBACK(cb_action_upload_to_radio_button_toggled), combo_box);
+    g_signal_connect(radio_button, "toggled", G_CALLBACK(cb_action_upload_to_radio_button_toggled_2), combo_box);
+    g_signal_connect(radio_button, "toggled", G_CALLBACK(cb_action_upload_to_radio_button_toggled_1), capture_data);
     g_signal_connect(combo_box, "changed", G_CALLBACK(cb_action_upload_to_options_combo_box_changed_1), time_limit_combo_box);
     g_signal_connect(combo_box, "changed", G_CALLBACK(cb_action_upload_to_options_combo_box_changed_2), capture_data);
     g_signal_connect(time_limit_combo_box, "changed", G_CALLBACK(cb_action_upload_to_time_limit_combo_box_changed), capture_data);

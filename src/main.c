@@ -38,26 +38,27 @@ void cb_post_capture_dialog_response(GtkWidget *self, gint response, CaptureData
 {
 	gtk_widget_destroy(self);
 
-	if (response != GTK_RESPONSE_ACCEPT)
-		gtk_main_quit();
-
-     switch (capture_data->action_type)
+	if (response == GTK_RESPONSE_ACCEPT)
     {
-        case SAVE:
-            xscreenshooter_save_to_file(capture_data);
-            break;
-        case CLIPBOARD:
-            xscreenshooter_copy_to_clipboard(capture_data->capture_pixbuf);
-            break;
-/*        case OPEN:
-            xscreenshooter_open_with(capture_data);
-            break;
-        case UPLOAD:
-            xscreenshooter_upload_to(capture_data);
-            break;
-            */
+        switch (capture_data->action_type)
+        {
+            case SAVE:
+                xscreenshooter_save_to_file(capture_data);
+                break;
+            case CLIPBOARD:
+                xscreenshooter_copy_to_clipboard(capture_data->capture_pixbuf);
+                break;
+            case OPEN:
+                xscreenshooter_open_with(capture_data);
+                break;
+                /*
+            case UPLOAD:
+                xscreenshooter_upload_to(capture_data);
+                break;
+                */
+        }
     }
-     gtk_main_quit();
+    gtk_main_quit();
 }
 
 void xscreenshooter_pre_capture(CaptureData *capture_data)
