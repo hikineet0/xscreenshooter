@@ -51,11 +51,9 @@ void cb_post_capture_dialog_response(GtkWidget *self, gint response, CaptureData
             case OPEN:
                 xscreenshooter_open_with(capture_data);
                 break;
-                /*
             case UPLOAD:
                 xscreenshooter_upload_to(capture_data);
                 break;
-                */
         }
     }
     gtk_main_quit();

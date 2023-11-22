@@ -11,7 +11,7 @@
 #define STRING_MAX 250
 
 static void populate_list_store_time_limit(GtkListStore *list_store, gchar **time_options);
-static void set_time_limit_combo_box_default(GtkWidget *combo_box);
+static void set_combo_box_default(GtkWidget *combo_box, ComboBox type);
 
 typedef struct{
     gchar *file_key;
@@ -119,7 +119,7 @@ void cb_action_upload_to_options_combo_box_changed_1(GtkComboBox *self, GtkWidge
         gtk_list_store_clear(GTK_LIST_STORE(gtk_combo_box_get_model(GTK_COMBO_BOX(combo_box))));
         gtk_widget_set_sensitive(combo_box, TRUE);
         populate_list_store_time_limit(GTK_LIST_STORE(gtk_combo_box_get_model(GTK_COMBO_BOX(combo_box))), post_data->params->time_options);
-        set_time_limit_combo_box_default(combo_box);
+        set_combo_box_default(combo_box, TIME_LIMIT_CB);
     }
     else
         gtk_widget_set_sensitive(combo_box, FALSE);
@@ -297,19 +297,21 @@ static void populate_list_store_time_limit(GtkListStore *list_store, gchar **tim
     }
 }
 
-static void set_open_with_combo_box_default(GtkWidget *combo_box)
+static void set_combo_box_default(GtkWidget *combo_box, ComboBox type)
 {
-    gtk_combo_box_set_active(GTK_COMBO_BOX(combo_box), 0);
-}
+    GtkTreeIter iter;
+    GtkTreePath *path;
 
-static void set_upload_hosts_combo_box_default(GtkWidget *combo_box)
-{
-    gtk_combo_box_set_active(GTK_COMBO_BOX(combo_box), 0);
-}
+    path = gtk_tree_path_new_from_string("0:0");
 
-static void set_time_limit_combo_box_default(GtkWidget *combo_box)
-{
-    gtk_combo_box_set_active(GTK_COMBO_BOX(combo_box), 0);
+    if (gtk_tree_model_get_iter(gtk_combo_box_get_model(GTK_COMBO_BOX(combo_box)), &iter, path))
+        gtk_combo_box_set_active_iter(GTK_COMBO_BOX(combo_box), &iter);
+    else
+    {
+        log_s("Failed to set default value for combo box:");
+        log_d(type);
+    }
+    gtk_tree_path_free(path);
 }
 
 GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
@@ -378,11 +380,11 @@ GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
     gtk_cell_layout_pack_end(GTK_CELL_LAYOUT(combo_box), renderer, TRUE);
     gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo_box), renderer, "text", 1, NULL);
     gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo_box), renderer_pixbuf, "pixbuf", 0, NULL);
-    populate_list_store_apps(list_store);
-    set_open_with_combo_box_default(combo_box);
     gtk_widget_set_sensitive(combo_box, FALSE);
     g_signal_connect(combo_box, "changed", G_CALLBACK(cb_action_open_with_options_combo_box_changed), capture_data);
     gtk_grid_attach(GTK_GRID(actions_grid), combo_box, 1, 2, 1, 1);
+    populate_list_store_apps(list_store);
+    set_combo_box_default(combo_box, OPEN_WITH_CB);
 
     radio_button = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio_button), "Open with: ");
     g_signal_connect(radio_button, "toggled", G_CALLBACK(cb_action_open_with_radio_button_toggled_2), combo_box);
@@ -402,8 +404,6 @@ GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
     gtk_cell_layout_pack_end(GTK_CELL_LAYOUT(combo_box), renderer, TRUE);
     gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo_box), renderer, "text", 1, NULL);
     gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo_box), renderer_pixbuf, "pixbuf", 0, NULL);
-    populate_list_store_hosts(list_store);
-    set_upload_hosts_combo_box_default(combo_box);
     gtk_widget_set_sensitive(combo_box, FALSE);
     gtk_grid_attach(GTK_GRID(actions_grid), combo_box, 1, 3, 1, 1);
 
@@ -421,6 +421,9 @@ GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
     g_signal_connect(combo_box, "changed", G_CALLBACK(cb_action_upload_to_options_combo_box_changed_1), time_limit_combo_box);
     g_signal_connect(combo_box, "changed", G_CALLBACK(cb_action_upload_to_options_combo_box_changed_2), capture_data);
     g_signal_connect(time_limit_combo_box, "changed", G_CALLBACK(cb_action_upload_to_time_limit_combo_box_changed), capture_data);
+
+    populate_list_store_hosts(list_store);
+    set_combo_box_default(combo_box, UPLOAD_HOST_CB);
 
     // RIGHT SIDE
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);

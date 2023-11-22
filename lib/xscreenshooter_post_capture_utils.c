@@ -25,6 +25,19 @@ static gchar* get_default_filename()
     return filename;
 }
 
+gchar *create_temp_file(gchar *filename)
+{
+    GFile *gfile = g_file_new_for_path(g_get_tmp_dir());
+    gchar *gfile_path = g_file_get_path(gfile);
+    gchar *save_location = g_build_filename(gfile_path, filename, NULL);
+
+    g_object_unref(gfile);
+    g_free(gfile_path);
+
+    return save_location;
+}
+
+
 void xscreenshooter_save_to_file(CaptureData *capture_data)
 {
     GdkPixbuf *pixbuf = capture_data->capture_pixbuf;
@@ -74,15 +87,10 @@ void xscreenshooter_copy_to_clipboard(GdkPixbuf *pixbuf)
 
 void xscreenshooter_open_with(CaptureData *capture_data)
 {
-    GFile *gfile = g_file_new_for_path(g_get_tmp_dir());
-    gchar *gfile_path = g_file_get_path(gfile);
     gchar *filename = get_default_filename();
-    gchar *save_location = g_build_filename(gfile_path, filename, NULL);
+    gchar *save_location = create_temp_file(filename);
 
-    g_object_unref(gfile);
-    g_free(gfile_path);
     g_free(filename);
-    log_s(save_location);
 
     if (gdk_pixbuf_save(capture_data->capture_pixbuf, save_location, "png", NULL, "compression", "9", NULL))
     {
@@ -120,4 +128,13 @@ void xscreenshooter_open_with(CaptureData *capture_data)
     else
         log_s("Failed to save temp file.");
     g_free(save_location);
+}
+
+void xscreenshooter_upload_to(CaptureData *capture_data)
+{
+    log_s(capture_data->url);
+    log_s(capture_data->file_key);
+    log_s(capture_data->time_key);
+    log_s(capture_data->time_option);
+    gtk_main_quit();
 }

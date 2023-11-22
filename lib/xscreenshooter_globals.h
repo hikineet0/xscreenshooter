@@ -14,6 +14,13 @@ typedef enum
 	SAVE, CLIPBOARD, OPEN, UPLOAD
 } ActionType;
 
+typedef enum
+{
+    UPLOAD_HOST_CB = 85726766,
+    OPEN_WITH_CB = 79876766,
+    TIME_LIMIT_CB = 84766766
+} ComboBox;
+
 typedef struct
 {
 	// pre capture
