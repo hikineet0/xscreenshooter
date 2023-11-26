@@ -10,7 +10,7 @@
 #define ICON_SIZE 16
 #define STRING_MAX 250
 
-static void populate_list_store_time_limit(GtkListStore *list_store, gchar **time_options);
+static void populate_combo_box_time_limit(GtkComboBoxText *combo_box, gchar **time_options);
 static void set_combo_box_default(GtkWidget *combo_box, ComboBox type);
 
 typedef struct{
@@ -114,15 +114,18 @@ void cb_action_upload_to_options_combo_box_changed_1(GtkComboBox *self, GtkWidge
 
     gtk_combo_box_get_active_iter(self, &iter);
     gtk_tree_model_get(model, &iter, 2, &post_data, -1);
+
     if (g_strcmp0(post_data->params->time_key, NULL))
     {
-        gtk_list_store_clear(GTK_LIST_STORE(gtk_combo_box_get_model(GTK_COMBO_BOX(combo_box))));
-        gtk_widget_set_sensitive(combo_box, TRUE);
-        populate_list_store_time_limit(GTK_LIST_STORE(gtk_combo_box_get_model(GTK_COMBO_BOX(combo_box))), post_data->params->time_options);
+        populate_combo_box_time_limit(GTK_COMBO_BOX_TEXT(combo_box), post_data->params->time_options);
         set_combo_box_default(combo_box, TIME_LIMIT_CB);
+        gtk_widget_set_sensitive(combo_box, TRUE);
     }
     else
+    {
+        gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT(combo_box));
         gtk_widget_set_sensitive(combo_box, FALSE);
+    }
 }
 
 void cb_action_upload_to_options_combo_box_changed_2(GtkComboBox *self, CaptureData *capture_data)
@@ -146,8 +149,11 @@ void cb_action_upload_to_time_limit_combo_box_changed(GtkComboBox *self, Capture
     GtkTreeIter iter;
     GtkTreeModel *model = gtk_combo_box_get_model(self);
 
-    gtk_combo_box_get_active_iter(self, &iter);
-    gtk_tree_model_get(model, &iter, 0, &capture_data->time_option, -1);
+    if (gtk_combo_box_get_active_iter(self, &iter))
+        // Because clearing a combo box repeatedly emits the changed signal, causing it to be
+        // eimtted even when there is no items in the combo box, which causes the following
+        // line to cause a segfault.
+        gtk_tree_model_get(model, &iter, 0, &capture_data->time_option, -1);
 }
 
 static void add_item_apps(GAppInfo *app_info, GtkWidget *list_store)
@@ -282,36 +288,37 @@ static void populate_list_store_hosts(GtkListStore *list_store)
     closedir(dir);
 }
 
-static void populate_list_store_time_limit(GtkListStore *list_store, gchar **time_options)
+static void populate_combo_box_time_limit(GtkComboBoxText *combo_box, gchar **time_options)
 {
     int i = 0;
     while (time_options[i] != NULL)
     {
-        GtkTreeIter iter;
-        gtk_list_store_append(list_store, &iter);
-        gtk_list_store_set(
-                list_store, &iter,
-                0, time_options[i],
-                -1);
+        gtk_combo_box_text_append_text(combo_box, time_options[i]);
         i++;
     }
 }
 
 static void set_combo_box_default(GtkWidget *combo_box, ComboBox type)
 {
-    GtkTreeIter iter;
-    GtkTreePath *path;
-
-    path = gtk_tree_path_new_from_string("0:0");
-
-    if (gtk_tree_model_get_iter(gtk_combo_box_get_model(GTK_COMBO_BOX(combo_box)), &iter, path))
-        gtk_combo_box_set_active_iter(GTK_COMBO_BOX(combo_box), &iter);
+    if (type == TIME_LIMIT_CB)
+        // Time limit combo box always starts at 0.
+        gtk_combo_box_set_active(GTK_COMBO_BOX(combo_box), 0);
     else
     {
-        log_s("Failed to set default value for combo box:");
-        log_d(type);
+        GtkTreeIter iter;
+        GtkTreePath *path;
+
+        path = gtk_tree_path_new_from_string("0:0");
+
+        if (gtk_tree_model_get_iter(gtk_combo_box_get_model(GTK_COMBO_BOX(combo_box)), &iter, path))
+            gtk_combo_box_set_active_iter(GTK_COMBO_BOX(combo_box), &iter);
+        else
+        {
+            log_s("Failed to set default value for combo box:");
+            log_d(type);
+        }
+        gtk_tree_path_free(path);
     }
-    gtk_tree_path_free(path);
 }
 
 GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
@@ -408,11 +415,7 @@ GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
     gtk_grid_attach(GTK_GRID(actions_grid), combo_box, 1, 3, 1, 1);
 
     //                                            time frame
-    time_limit_list_store = gtk_list_store_new(1, G_TYPE_STRING);
-    time_limit_combo_box = gtk_combo_box_new_with_model(GTK_TREE_MODEL(time_limit_list_store));
-    renderer = gtk_cell_renderer_text_new();
-    gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(time_limit_combo_box), renderer, TRUE);
-    gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(time_limit_combo_box), renderer, "text", 0, NULL);
+    time_limit_combo_box = gtk_combo_box_text_new();
     gtk_widget_set_sensitive(time_limit_combo_box, FALSE);
     gtk_grid_attach(GTK_GRID(actions_grid), time_limit_combo_box, 2, 3, 1, 1);
     
