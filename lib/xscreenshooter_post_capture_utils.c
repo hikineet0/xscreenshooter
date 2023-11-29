@@ -2,6 +2,7 @@
 #include <gtk/gtk.h>
 #include <glib.h>
 #include <gio/gio.h>
+#include <curl/curl.h>
 
 #include "xscreenshooter_debug.h"
 #include "xscreenshooter_globals.h"
@@ -132,9 +133,77 @@ void xscreenshooter_open_with(CaptureData *capture_data)
 
 void xscreenshooter_upload_to(CaptureData *capture_data)
 {
-    log_s(capture_data->url);
-    log_s(capture_data->file_key);
-    log_s(capture_data->time_key);
-    log_s(capture_data->time_option);
-    gtk_main_quit();
+    CURL *handle;
+    CURLcode res;
+    curl_mime *mime;
+    curl_mimepart *part;
+
+    gchar *filename;
+    gchar *save_location;
+
+    GList *keys = capture_data->keys;
+    GList *values = capture_data->values;
+    gchar *key, *value;
+
+    filename = get_default_filename();
+    save_location = create_temp_file(filename);
+    if (!gdk_pixbuf_save(capture_data->capture_pixbuf, save_location, "png", NULL, "compression", "9", NULL))
+    {
+        log_s("Error saving to temp file.");
+        return;
+    }
+
+   handle = curl_easy_init();
+    if (handle)
+    {
+        curl_easy_setopt(handle, CURLOPT_URL, capture_data->url);
+        // Setting options
+        curl_easy_setopt(handle, CURLOPT_BUFFERSIZE, 102400L);
+        curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 1L);
+        curl_easy_setopt(handle, CURLOPT_USERAGENT, "curl/8.4.0");
+        curl_easy_setopt(handle, CURLOPT_MAXREDIRS, 50L);
+        curl_easy_setopt(handle, CURLOPT_HTTP_VERSION, (long)CURL_HTTP_VERSION_2TLS);
+        curl_easy_setopt(handle, CURLOPT_FTP_SKIP_PASV_IP, 1L);
+        curl_easy_setopt(handle, CURLOPT_TCP_KEEPALIVE, 1L);
+
+        mime = curl_mime_init(handle);
+        part = curl_mime_addpart(mime);
+        curl_mime_name(part, capture_data->file_key);
+        curl_mime_filedata(part, save_location);
+
+        while (g_list_length(keys))
+        {
+            key = g_list_first(keys)->data;
+            value = g_list_first(values)->data;
+            keys = g_list_remove(keys, key);
+            values = g_list_remove(values, value);
+
+            part = curl_mime_addpart(mime);
+            curl_mime_name(part, key);
+            curl_mime_data(part, value, CURL_ZERO_TERMINATED);
+        }
+
+        if (g_strcmp0(capture_data->time_key, NULL))
+        {
+            part = curl_mime_addpart(mime);
+            curl_mime_name(part, capture_data->time_key);
+            curl_mime_data(part, capture_data->time_option, CURL_ZERO_TERMINATED);
+        }
+
+        curl_easy_setopt(handle, CURLOPT_MIMEPOST, mime);
+        res = curl_easy_perform(handle);
+
+        curl_easy_cleanup(handle);
+        curl_mime_free(mime);
+
+        g_free(filename);
+        g_free(save_location);
+        if (keys != NULL)
+        {
+            g_free(key);
+            g_free(value);
+            g_list_free(keys);
+            g_list_free(values);
+        }
+    }
 }

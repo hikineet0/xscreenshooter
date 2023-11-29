@@ -1,1 +1,2 @@
-url = https://uguu.se/upload.php
+url = https://uguu.se/upload.php?output=text
+files[] = <file>

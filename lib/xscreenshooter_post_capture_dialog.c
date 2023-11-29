@@ -17,7 +17,7 @@ typedef struct{
     gchar *file_key;
     gchar *time_key;
     gchar **time_options;
-    GList *keys, *values;
+    GList *keys, *values; // Other miscellaneous keys and values required during POST to API
 }Params;
 
 typedef struct{
