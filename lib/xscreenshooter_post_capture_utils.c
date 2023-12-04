@@ -26,7 +26,7 @@ static gchar* get_default_filename()
     return filename;
 }
 
-gchar *create_temp_file(gchar *filename)
+static gchar *create_temp_file(gchar *filename)
 {
     GFile *gfile = g_file_new_for_path(g_get_tmp_dir());
     gchar *gfile_path = g_file_get_path(gfile);
@@ -38,6 +38,39 @@ gchar *create_temp_file(gchar *filename)
     return save_location;
 }
 
+typedef struct ResData {
+    char *data;
+    size_t size;
+} ResData;
+
+static void res_data_init(ResData *res_data)
+{
+    res_data->size = 0;
+    res_data->data = malloc(res_data->size + 1);
+    if (res_data->data == NULL)
+    {
+        log_s("ResData malloc() failed.");
+        return;
+    }
+    res_data->data[0] = '\0';
+
+}
+
+static size_t write_function(char *ptr, size_t size, size_t nmemb, ResData *res_data)
+{
+    size_t new_size = res_data->size + size*nmemb;
+    res_data->data = realloc(res_data->data, new_size+1);
+    if (res_data->data == NULL)
+    {
+        log_s("ResData realloc() failed.");
+        return CURLE_WRITE_ERROR;
+    }
+    memcpy(res_data->data + res_data->size, ptr, size*nmemb);
+    res_data->data[new_size] = '\0';
+    res_data->size = new_size;
+
+    return size*nmemb;
+}
 
 void xscreenshooter_save_to_file(CaptureData *capture_data)
 {
@@ -137,6 +170,7 @@ void xscreenshooter_upload_to(CaptureData *capture_data)
     CURLcode res;
     curl_mime *mime;
     curl_mimepart *part;
+    ResData res_data;
 
     gchar *filename;
     gchar *save_location;
@@ -156,6 +190,7 @@ void xscreenshooter_upload_to(CaptureData *capture_data)
    handle = curl_easy_init();
     if (handle)
     {
+        res_data_init(&res_data);
         curl_easy_setopt(handle, CURLOPT_URL, capture_data->url);
         // Setting options
         curl_easy_setopt(handle, CURLOPT_BUFFERSIZE, 102400L);
@@ -165,6 +200,8 @@ void xscreenshooter_upload_to(CaptureData *capture_data)
         curl_easy_setopt(handle, CURLOPT_HTTP_VERSION, (long)CURL_HTTP_VERSION_2TLS);
         curl_easy_setopt(handle, CURLOPT_FTP_SKIP_PASV_IP, 1L);
         curl_easy_setopt(handle, CURLOPT_TCP_KEEPALIVE, 1L);
+        curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_function);
+        curl_easy_setopt(handle, CURLOPT_WRITEDATA, &res_data);
 
         mime = curl_mime_init(handle);
         part = curl_mime_addpart(mime);
@@ -196,14 +233,16 @@ void xscreenshooter_upload_to(CaptureData *capture_data)
         curl_easy_cleanup(handle);
         curl_mime_free(mime);
 
-        g_free(filename);
-        g_free(save_location);
-        if (keys != NULL)
-        {
-            g_free(key);
-            g_free(value);
-            g_list_free(keys);
-            g_list_free(values);
-        }
+        log_s(res_data.data);
+        free(res_data.data);
+    }
+    g_free(filename);
+    g_free(save_location);
+    if (keys != NULL)
+    {
+        g_free(key);
+        g_free(value);
+        g_list_free(keys);
+        g_list_free(values);
     }
 }
