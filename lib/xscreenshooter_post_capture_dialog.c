@@ -78,7 +78,6 @@ void cb_action_open_with_radio_button_toggled_1(GtkToggleButton *self, CaptureDa
 
 void cb_action_open_with_options_combo_box_changed(GtkComboBox *self, CaptureData *capture_data)
 {
-    capture_data->action_type = OPEN;
     GtkTreeModel *model = gtk_combo_box_get_model(self);
     GtkTreeIter iter;
     gchar *app = NULL;
