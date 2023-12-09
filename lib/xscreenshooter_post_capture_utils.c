@@ -7,6 +7,7 @@
 #include "xscreenshooter_debug.h"
 #include "xscreenshooter_globals.h"
 #include "xscreenshooter_post_capture_utils.h"
+#include "xscreenshooter_utils.h"
 
 
 static gchar* get_default_filename()
@@ -38,39 +39,6 @@ static gchar *create_temp_file(gchar *filename)
     return save_location;
 }
 
-typedef struct ResData {
-    char *data;
-    size_t size;
-} ResData;
-
-static void res_data_init(ResData *res_data)
-{
-    res_data->size = 0;
-    res_data->data = malloc(res_data->size + 1);
-    if (res_data->data == NULL)
-    {
-        log_s("ResData malloc() failed.");
-        return;
-    }
-    res_data->data[0] = '\0';
-
-}
-
-static size_t write_function(char *ptr, size_t size, size_t nmemb, ResData *res_data)
-{
-    size_t new_size = res_data->size + size*nmemb;
-    res_data->data = realloc(res_data->data, new_size+1);
-    if (res_data->data == NULL)
-    {
-        log_s("ResData realloc() failed.");
-        return CURLE_WRITE_ERROR;
-    }
-    memcpy(res_data->data + res_data->size, ptr, size*nmemb);
-    res_data->data[new_size] = '\0';
-    res_data->size = new_size;
-
-    return size*nmemb;
-}
 
 void xscreenshooter_save_to_file(CaptureData *capture_data)
 {
@@ -112,12 +80,14 @@ void xscreenshooter_save_to_file(CaptureData *capture_data)
     g_free(filename);
 }
 
+
 void xscreenshooter_copy_to_clipboard(GdkPixbuf *pixbuf)
 {
     GtkClipboard *clipboard;
     clipboard = gtk_clipboard_get_for_display(gdk_display_get_default(), GDK_SELECTION_CLIPBOARD);
     gtk_clipboard_set_image(clipboard, pixbuf);
 }
+
 
 void xscreenshooter_open_with(CaptureData *capture_data)
 {
@@ -164,6 +134,41 @@ void xscreenshooter_open_with(CaptureData *capture_data)
     g_free(save_location);
 }
 
+
+typedef struct ResData {
+    char *data;
+    size_t size;
+} ResData;
+
+static void res_data_init(ResData *res_data)
+{
+    res_data->size = 0;
+    res_data->data = malloc(res_data->size + 1);
+    if (res_data->data == NULL)
+    {
+        log_s("ResData malloc() failed.");
+        return;
+    }
+    res_data->data[0] = '\0';
+
+}
+
+static size_t write_function(char *ptr, size_t size, size_t nmemb, ResData *res_data)
+{
+    size_t new_size = res_data->size + size*nmemb;
+    res_data->data = realloc(res_data->data, new_size+1);
+    if (res_data->data == NULL)
+    {
+        log_s("ResData realloc() failed.");
+        return CURLE_WRITE_ERROR;
+    }
+    memcpy(res_data->data + res_data->size, ptr, size*nmemb);
+    res_data->data[new_size] = '\0';
+    res_data->size = new_size;
+
+    return size*nmemb;
+}
+
 void xscreenshooter_upload_to(CaptureData *capture_data)
 {
     CURL *handle;
@@ -183,7 +188,7 @@ void xscreenshooter_upload_to(CaptureData *capture_data)
     save_location = create_temp_file(filename);
     if (!gdk_pixbuf_save(capture_data->capture_pixbuf, save_location, "png", NULL, "compression", "9", NULL))
     {
-        log_s("Error saving to temp file.");
+        xscreenshooter_create_modal_dialog(NULL, "ERROR", "OK", "Error saving to temp file.");
         return;
     }
 
@@ -233,7 +238,7 @@ void xscreenshooter_upload_to(CaptureData *capture_data)
         curl_easy_cleanup(handle);
         curl_mime_free(mime);
 
-        log_s(res_data.data);
+        xscreenshooter_create_modal_dialog(NULL, "Upload Successful!", "OK", res_data.data);
         free(res_data.data);
     }
     g_free(filename);
@@ -245,4 +250,5 @@ void xscreenshooter_upload_to(CaptureData *capture_data)
         g_list_free(keys);
         g_list_free(values);
     }
+    return;
 }
