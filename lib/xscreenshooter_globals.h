@@ -33,6 +33,7 @@ typedef struct
 	ActionType action_type;
 	gchar *app;
 	GAppInfo *app_info;
+    gchar *save_location;
 
 	// POST data
 	char *url;

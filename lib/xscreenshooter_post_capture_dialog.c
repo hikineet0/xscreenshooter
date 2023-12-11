@@ -1,4 +1,5 @@
 #include <limits.h> // for PATH_MAX
+#include <wordexp.h>
 #include <gtk/gtk.h>
 #include <dirent.h>
 #include <regex.h>
@@ -254,13 +255,15 @@ static void populate_list_store_hosts(GtkListStore *list_store)
     DIR *dir;
     struct dirent *entry;
     regex_t regex;
-    char xscreenshooter_hosts_dir[PATH_MAX + 1];
+    char *xscreenshooter_hosts_dir;
+    wordexp_t exp_result;
     char real_path[PATH_MAX + 1];
     char *icon_path;
 
     const char *pattern = ".*\\.host"; // regex to match upload host files
 
-    realpath("hosts", xscreenshooter_hosts_dir);
+     wordexp("~/.config/xscreenshooter/hosts", &exp_result, 0);
+     xscreenshooter_hosts_dir = exp_result.we_wordv[0];
     dir = opendir(xscreenshooter_hosts_dir);
     if (dir == NULL)
     {
@@ -285,6 +288,7 @@ static void populate_list_store_hosts(GtkListStore *list_store)
         }
     }
     closedir(dir);
+    wordfree(&exp_result);
 }
 
 static void populate_combo_box_time_limit(GtkComboBoxText *combo_box, gchar **time_options)

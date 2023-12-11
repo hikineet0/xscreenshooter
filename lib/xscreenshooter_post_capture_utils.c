@@ -49,7 +49,6 @@ void xscreenshooter_save_to_file(CaptureData *capture_data)
     GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_SAVE;
     GtkFileFilter *filter;
     gint res;
-    gchar *save_location;
     gchar *filename = get_default_filename();
 
     filter = gtk_file_filter_new();
@@ -73,8 +72,8 @@ void xscreenshooter_save_to_file(CaptureData *capture_data)
 
     if (res == GTK_RESPONSE_ACCEPT)
     {
-        save_location = gtk_file_chooser_get_filename(chooser);
-        if (!gdk_pixbuf_save(pixbuf, save_location, "png", NULL, "compression", "9", NULL))
+        capture_data->save_location = gtk_file_chooser_get_filename(chooser);
+        if (!gdk_pixbuf_save(pixbuf, capture_data->save_location, "png", NULL, "compression", "9", NULL))
             log_s("Failed to save temp file.");
     }
     g_free(filename);

@@ -112,6 +112,7 @@ int main(int argc, char **argv)
 	capture_data.capture_type = ENTIRE;
 	capture_data.action_type = SAVE;
 	capture_data.is_show_cursor = FALSE;
+    capture_data.save_location = NULL;
 	capture_data.app = NULL;
 	capture_data.url = NULL;
 	capture_data.keys = NULL;
