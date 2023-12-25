@@ -22,13 +22,13 @@ typedef struct {
 } RbData;
 
 
-static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window);
-static GdkPixbuf *xscreenshooter_get_pixbuf_from_window(GdkWindow *window, gint x, gint y, gint width, gint height);
+static GdkPixbuf *capture_window(GdkWindow *window);
+static GdkPixbuf *get_pixbuf_from_window(GdkWindow *window, gint x, gint y, gint width, gint height);
 
-static GdkWindow *xscreenshooter_get_active_window();
-static Window xscreenshooter_get_active_window_from_xlib();
+static GdkWindow *get_active_window();
+static Window get_active_window_from_xlib();
 
-static GdkPixbuf* xscreenshooter_get_area_selection();
+static GdkPixbuf* get_area_selection(capture_data);
 static GdkFilterReturn mask(GdkXEvent *xevent, GdkEvent *event, RbData *rbdata);
 
 static void capture_cursor(GdkPixbuf *capture_pixbuf, int x, int y, int w, int h);
@@ -39,7 +39,6 @@ void xscreenshooter_capture(CaptureData *capture_data)
 {
 	GdkWindow *window;
 	GdkPixbuf *capture_pixbuf;
-	gint delay = capture_data->delay;
 
 	switch (capture_data->capture_type)
 	{
@@ -47,17 +46,17 @@ void xscreenshooter_capture(CaptureData *capture_data)
 			window = gdk_get_default_root_window();
 			break;
 		case ACTIVE:
-			window = xscreenshooter_get_active_window();
+			window = get_active_window();
 			break;
         case SELECT:
-			capture_pixbuf = xscreenshooter_get_area_selection();
+			capture_pixbuf = get_area_selection(capture_data);
             window = NULL;
             break;
 	}
     if (window != NULL)
     {
         // Only useful to filter out SELECT screenshots
-        capture_pixbuf = xscreenshooter_capture_window(window);
+        capture_pixbuf = capture_window(window);
         if (capture_data->is_show_cursor)
         {
             int x, y, w, h;
@@ -78,12 +77,12 @@ void xscreenshooter_capture(CaptureData *capture_data)
 	capture_data->capture_pixbuf = capture_pixbuf;
 }
 
-static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window)
+static GdkPixbuf *capture_window(GdkWindow *window)
 {
 	gint width, height;
 	gdk_window_get_geometry(window, NULL, NULL, &width, &height);
     // 0, 0 for x and y because dont need to offset the screenshot
-	GdkPixbuf *capture_pixbuf = xscreenshooter_get_pixbuf_from_window(window, 0, 0, width, height);
+	GdkPixbuf *capture_pixbuf = get_pixbuf_from_window(window, 0, 0, width, height);
 	return capture_pixbuf;
 }
 
@@ -95,7 +94,7 @@ static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window)
  * source: https://gitlab.xfce.org/apps/xfce4-screenshooter/-/blob/master/lib/screenshooter-utils.c
  *
  */
- static GdkPixbuf *xscreenshooter_get_pixbuf_from_window(GdkWindow *window, gint x, gint y, gint width, gint height)
+ static GdkPixbuf *get_pixbuf_from_window(GdkWindow *window, gint x, gint y, gint width, gint height)
 {
 	gint scale_factor;
 	cairo_surface_t *surface;
@@ -121,7 +120,7 @@ static GdkPixbuf *xscreenshooter_capture_window(GdkWindow *window)
 	return pixbuf;
 }
 
-static GdkWindow *xscreenshooter_get_active_window()
+static GdkWindow *get_active_window()
 {
     GdkWindow *window, *window2;
     Window xwindow;
@@ -130,7 +129,7 @@ static GdkWindow *xscreenshooter_get_active_window()
     //TRACE("Get the active window");
 
     display = gdk_display_get_default();
-    xwindow = xscreenshooter_get_active_window_from_xlib();
+    xwindow = get_active_window_from_xlib();
     if (xwindow != None)
         window = gdk_x11_window_foreign_new_for_display(display, xwindow);
     else
@@ -173,7 +172,7 @@ static GdkWindow *xscreenshooter_get_active_window()
     return window;
 }
 
-static Window xscreenshooter_get_active_window_from_xlib()
+static Window get_active_window_from_xlib()
 {
     GdkDisplay *display;
     Display *dsp;
@@ -331,9 +330,10 @@ static GdkFilterReturn mask(GdkXEvent *xevent, GdkEvent *event, RbData *rbdata)
             }
             break;
     }
+    return GDK_FILTER_CONTINUE;
 }
 
-static GdkPixbuf* xscreenshooter_get_area_selection(CaptureData *capture_data)
+static GdkPixbuf* get_area_selection(CaptureData *capture_data)
 {
     GdkWindow *window;
 
@@ -426,7 +426,7 @@ static GdkPixbuf* xscreenshooter_get_area_selection(CaptureData *capture_data)
         else
             sleep(capture_data->delay);
 
-        capture_pixbuf = xscreenshooter_get_pixbuf_from_window(window, rbdata.rectangle.x, rbdata.rectangle.y,
+        capture_pixbuf = get_pixbuf_from_window(window, rbdata.rectangle.x, rbdata.rectangle.y,
                 rbdata.rectangle.width, rbdata.rectangle.height);
         capture_cursor(capture_pixbuf, rbdata.rectangle.x, rbdata.rectangle.y, rbdata.rectangle.width, rbdata.rectangle.height);
     }

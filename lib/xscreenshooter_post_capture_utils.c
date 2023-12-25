@@ -1,3 +1,4 @@
+#include <libgen.h>
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <glib.h>
@@ -13,17 +14,18 @@
 static gchar* get_default_filename()
 {
     GDateTime *date_time;
-    int length;
+    long int length;
     gint64 timestamp;
-    gchar *timestamp_s = malloc(length+1);
+    gchar *timestamp_s;
     gchar *filename;
 
     date_time = g_date_time_new_now_local();
     timestamp = g_date_time_to_unix(date_time);
-    length = snprintf(NULL, 0, "%d", timestamp);
-    snprintf(timestamp_s, length+1, "%d", timestamp);
+    length = snprintf(NULL, 0, "%ld", timestamp);
+    timestamp_s = malloc(length+1);
+    snprintf(timestamp_s, length+1, "%ld", timestamp);
     filename = g_strconcat("Screenshot_", timestamp_s, ".png", NULL);
-    free(timestamp_s);
+    g_free(timestamp_s);
     return filename;
 }
 
@@ -65,6 +67,8 @@ void xscreenshooter_save_to_file(CaptureData *capture_data)
 
     chooser = GTK_FILE_CHOOSER(GTK_DIALOG(dialog));
     gtk_file_chooser_set_do_overwrite_confirmation(chooser, TRUE);
+    if (capture_data->save_location)
+        gtk_file_chooser_set_filename(chooser, capture_data->save_location);
     gtk_file_chooser_set_current_name(chooser, filename);
     gtk_file_chooser_add_filter(chooser, filter);
 
@@ -74,7 +78,7 @@ void xscreenshooter_save_to_file(CaptureData *capture_data)
     {
         capture_data->save_location = gtk_file_chooser_get_filename(chooser);
         if (!gdk_pixbuf_save(pixbuf, capture_data->save_location, "png", NULL, "compression", "9", NULL))
-            log_s("Failed to save temp file.");
+            log_s("Failed to save  file.");
     }
     g_free(filename);
 }
@@ -98,7 +102,7 @@ void xscreenshooter_open_with(CaptureData *capture_data)
     if (gdk_pixbuf_save(capture_data->capture_pixbuf, save_location, "png", NULL, "compression", "9", NULL))
     {
         gchar *application = capture_data->app;
-        GAppInfo *app_info = capture_data->app_info;
+        // GAppInfo *app_info = capture_data->app_info;
         if (!g_str_equal(application, "none"))
         {
             gboolean success;
@@ -107,11 +111,8 @@ void xscreenshooter_open_with(CaptureData *capture_data)
 /*             if (app_info != NULL)
             {
                 GList *files = g_list_append(NULL, save_location);
-                log_d(3);
                 success = g_app_info_launch(app_info, files, NULL, &error);
-                log_d(1);
                 g_list_free_full(files, g_object_unref);
-                log_d(2);
             }
             else*/ if (application != NULL)
             {
@@ -238,7 +239,7 @@ void xscreenshooter_upload_to(CaptureData *capture_data)
         curl_mime_free(mime);
 
         xscreenshooter_create_modal_dialog(NULL, "Upload Successful!", "OK", res_data.data);
-        free(res_data.data);
+            free(res_data.data);
     }
     g_free(filename);
     g_free(save_location);

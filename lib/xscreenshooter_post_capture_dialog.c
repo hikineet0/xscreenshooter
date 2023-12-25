@@ -34,6 +34,7 @@ static POSTData *post_data_copy(POSTData *src)
     dest->params->time_key = g_strdup(src->params->time_key);
     dest->params->keys = g_list_copy_deep(src->params->keys, (GCopyFunc)g_strdup, NULL);
     dest->params->values = g_list_copy_deep(src->params->values, (GCopyFunc)g_strdup, NULL);
+    return dest;
 }
 
 static void post_data_free(POSTData *post_data)
@@ -212,7 +213,7 @@ static void add_item_hosts(GtkListStore *list_store, HostInfo *host_info)
      post_data->params->keys = NULL;
      post_data->params->values = NULL;
      post_data->params->time_key = NULL;
-     post_data->params->time_options;
+     post_data->params->time_options = NULL;
      gchar key[STRING_MAX], value[STRING_MAX];
      
      FILE *fp;
@@ -257,13 +258,14 @@ static void populate_list_store_hosts(GtkListStore *list_store)
     regex_t regex;
     char *xscreenshooter_hosts_dir;
     wordexp_t exp_result;
-    char real_path[PATH_MAX + 1];
     char *icon_path;
 
     const char *pattern = ".*\\.host"; // regex to match upload host files
 
-     wordexp("~/.config/xscreenshooter/hosts", &exp_result, 0);
-     xscreenshooter_hosts_dir = exp_result.we_wordv[0];
+    wordexp("~/.config/xscreenshooter/hosts", &exp_result, 0);
+    xscreenshooter_hosts_dir = exp_result.we_wordv[0];
+    wordfree(&exp_result);
+
     dir = opendir(xscreenshooter_hosts_dir);
     if (dir == NULL)
     {
@@ -287,8 +289,8 @@ static void populate_list_store_hosts(GtkListStore *list_store)
             add_item_hosts(list_store, &host_info);
         }
     }
+    regfree(&regex);
     closedir(dir);
-    wordfree(&exp_result);
 }
 
 static void populate_combo_box_time_limit(GtkComboBoxText *combo_box, gchar **time_options)
@@ -324,13 +326,32 @@ static void set_combo_box_default(GtkWidget *combo_box, ComboBox type)
     }
 }
 
+static void load_previous_session_selection(GSList *group, int previous_session_selection)
+{
+    // Order of RadioButton group does not seem to depend on order of creation.
+    switch (previous_session_selection)
+    {
+        case UPLOAD:
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g_slist_nth_data(group, 0)), TRUE);
+            break;
+        case OPEN:
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g_slist_nth_data(group, 1)), TRUE);
+            break;
+        case CLIPBOARD:
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g_slist_nth_data(group, 2)), TRUE);
+            break;
+        default: // SAVE
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g_slist_nth_data(group, 3)), TRUE);
+    }
+}
+
 GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
 {
 	GtkWidget *dialog, *header_bar, *grid, *label, *box, *actions_grid,
 		  *radio_button, *combo_box, *time_limit_combo_box,
 		  *preview_image;
     GdkPixbuf *thumbnail;
-    GtkListStore *list_store, *time_limit_list_store;
+    GtkListStore *list_store;
     GtkCellRenderer *renderer, *renderer_pixbuf;
 
 	dialog = gtk_dialog_new_with_buttons(
@@ -430,6 +451,7 @@ GtkWidget *xscreenshooter_create_post_capture_dialog(CaptureData *capture_data)
 
     populate_list_store_hosts(list_store);
     set_combo_box_default(combo_box, UPLOAD_HOST_CB);
+    load_previous_session_selection(gtk_radio_button_get_group(GTK_RADIO_BUTTON(radio_button)), capture_data->action_type);
 
     // RIGHT SIDE
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);

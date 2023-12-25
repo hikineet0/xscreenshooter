@@ -4,6 +4,7 @@
 #include "xscreenshooter_pre_capture_dialog.h"
 #include "xscreenshooter_post_capture_dialog.h"
 #include "xscreenshooter_capture_utils.h"
+#include "xscreenshooter_utils.h"
 #include "xscreenshooter_post_capture_utils.h"
 
 static void xscreenshooter_pre_capture(CaptureData *capture_data);
@@ -56,6 +57,7 @@ static void cb_post_capture_dialog_response(GtkWidget *self, gint response, Capt
                 break;
         }
     }
+    xscreenshooter_save_session(capture_data);
     gtk_main_quit();
 }
 
@@ -108,10 +110,10 @@ int main(int argc, char **argv)
 {
 	gtk_init(&argc, &argv);
 	CaptureData capture_data;
-	capture_data.delay = 0;
-	capture_data.capture_type = ENTIRE;
-	capture_data.action_type = SAVE;
-	capture_data.is_show_cursor = FALSE;
+    capture_data.delay = 0;
+    capture_data.capture_type = ENTIRE;
+    capture_data.action_type = SAVE;
+    capture_data.is_show_cursor = FALSE;
     capture_data.save_location = NULL;
 	capture_data.app = NULL;
 	capture_data.url = NULL;
@@ -120,6 +122,7 @@ int main(int argc, char **argv)
 	capture_data.file_key = NULL;
 	capture_data.time_key = NULL;
 	capture_data.time_option = NULL;
+    xscreenshooter_load_previous_session(&capture_data);
 	xscreenshooter_start_gui(&capture_data);
 	return 0;
 }

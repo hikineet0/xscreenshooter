@@ -1,10 +1,9 @@
 #include <gtk/gtk.h>
 #include "xscreenshooter_debug.h"
-#include "xscreenshooter_utils.h"
 #include "xscreenshooter_globals.h"
+#include "xscreenshooter_utils.h"
 #include "xscreenshooter_pre_capture_dialog.h"
 #include "xscreenshooter_capture_utils.h"
-//#include "xscreenshooter_common_callbacks.h"
 
 void cb_entire_screen_radio_button_toggled(GtkToggleButton *self, CaptureData *capture_data)
 {
@@ -35,6 +34,28 @@ void cb_capture_cursor_check_button_toggled(GtkToggleButton *self, CaptureData *
 void cb_delay_spin_button_value_changed(GtkSpinButton *self, CaptureData *capture_data)
 {
 	capture_data->delay = (gint)gtk_spin_button_get_value(self);
+}
+
+static void load_previous_session_values(
+        GSList *radio_buttons, int previous_session_selection,
+        GtkWidget *cursor_check_button, int previous_session_state, 
+        GtkWidget *delay_spin_button, int previous_session_value)
+{
+    switch (previous_session_selection)
+    {
+        case SELECT:
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g_slist_nth_data(radio_buttons, 0)), TRUE);
+            break;
+        case ACTIVE:
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g_slist_nth_data(radio_buttons, 1)), TRUE);
+            break;
+        default: // ENTIRE
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g_slist_nth_data(radio_buttons, 2)), TRUE);
+            break;
+    }
+
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cursor_check_button), previous_session_state);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(delay_spin_button), previous_session_value);
 }
 
 GtkWidget *xscreenshooter_create_pre_capture_dialog(CaptureData *capture_data)
@@ -118,6 +139,11 @@ GtkWidget *xscreenshooter_create_pre_capture_dialog(CaptureData *capture_data)
 
 	delay_spin_button_label = gtk_label_new("seconds");
 	gtk_box_pack_start(GTK_BOX(delay_box), delay_spin_button_label, FALSE, FALSE, 0);
+
+    load_previous_session_values(gtk_radio_button_get_group(
+            GTK_RADIO_BUTTON(radio_button)), capture_data->capture_type, 
+            check_button, capture_data->is_show_cursor,
+            delay_spin_button, capture_data->delay);
 
 	return dialog;
 }
