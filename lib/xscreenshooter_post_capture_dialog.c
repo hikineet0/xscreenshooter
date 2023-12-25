@@ -264,7 +264,6 @@ static void populate_list_store_hosts(GtkListStore *list_store)
 
     wordexp("~/.config/xscreenshooter/hosts", &exp_result, 0);
     xscreenshooter_hosts_dir = exp_result.we_wordv[0];
-    wordfree(&exp_result);
 
     dir = opendir(xscreenshooter_hosts_dir);
     if (dir == NULL)
@@ -290,6 +289,7 @@ static void populate_list_store_hosts(GtkListStore *list_store)
         }
     }
     regfree(&regex);
+    wordfree(&exp_result);
     closedir(dir);
 }
 
