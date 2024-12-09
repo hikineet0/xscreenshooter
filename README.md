@@ -11,9 +11,13 @@ $ cmake ..
 $ make -si
 ```
 # Usage
+### GUI
 ```
 $ ./xscreenshooter
 ```
+### CLI
+See `$ ./xscreenshooter --help`
+
 # Adding a file hosting site
 Create a `website.host` file inside the `hosts` directory with the following format:
 ```
