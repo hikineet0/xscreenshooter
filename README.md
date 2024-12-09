@@ -19,7 +19,7 @@ $ ./xscreenshooter
 See `$ ./xscreenshooter --help`
 
 # Adding a file hosting site
-Create a `website.host` file inside the `hosts` directory with the following format:
+Create a `website.host` (all small) file inside the `hosts` directory with the following format:
 ```
 file_parameter = <file>
 time_parameter = <time_option>
@@ -40,3 +40,5 @@ reqtype = fileupload
 time = <time_option>
 time_options = 1h,12h,24h,72h
 ```
+### Optional
+Add a `website.favi` file to get an icon for the website on the dropdown menu.
